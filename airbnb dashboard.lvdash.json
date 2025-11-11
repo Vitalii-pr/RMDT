@@ -1,0 +1,1436 @@
+{
+  "datasets": [
+    {
+      "name": "f61cdb23",
+      "displayName": "berlin_calendar",
+      "queryLines": [
+        "SELECT\n",
+        "  l.neighbourhood_group AS city,\n",
+        "  l.neighbourhood,\n",
+        "  AVG(CAST(c.price AS DOUBLE)) AS avg_price,\n",
+        "  AVG(CASE WHEN c.available = 'f' THEN 1 ELSE 0 END) AS avg_occupancy\n",
+        "FROM\n",
+        "  some_catalog.airbnb_gold.berlin_listing l\n",
+        "JOIN\n",
+        "  some_catalog.airbnb_gold.berlin_calendar c\n",
+        "ON\n",
+        "  l.id = c.listing_id\n",
+        "GROUP BY\n",
+        "  l.neighbourhood_group, l.neighbourhood\n",
+        "ORDER BY\n",
+        "  l.neighbourhood_group, avg_price DESC, avg_occupancy DESC\n",
+        "LIMIT 10"
+      ],
+      "catalog": "some_catalog",
+      "schema": "airbnb_gold"
+    },
+    {
+      "name": "85d098af",
+      "displayName": "berlin_detailed_listing",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.berlin_detailed_listing"
+      ]
+    },
+    {
+      "name": "db77ed88",
+      "displayName": "berlin_detailed_reviews",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.berlin_detailed_reviews"
+      ]
+    },
+    {
+      "name": "853861a1",
+      "displayName": "berlin_reviews",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.berlin_reviews"
+      ]
+    },
+    {
+      "name": "4b4c8eed",
+      "displayName": "berlin_listing",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.berlin_listing;"
+      ]
+    },
+    {
+      "name": "0463912b",
+      "displayName": "stock_calendar",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.stock_calendar"
+      ]
+    },
+    {
+      "name": "0277424e",
+      "displayName": "stock_detailed_listing",
+      "queryLines": [
+        "SELECT neighbourhood_group, ROUND(AVG(price), 2) AS avg_price\n",
+        "FROM some_catalog.airbnb_gold.berlin_listing\n",
+        "GROUP BY neighbourhood_group"
+      ]
+    },
+    {
+      "name": "260c4347",
+      "displayName": "stock_listing",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.stock_listing"
+      ]
+    },
+    {
+      "name": "2d9a198b",
+      "displayName": "stock_detailed_reviews",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.stock_detailed_reviews"
+      ]
+    },
+    {
+      "name": "f625971b",
+      "displayName": "stock_review",
+      "queryLines": [
+        "SELECT * FROM some_catalog.airbnb_gold.stock_review"
+      ]
+    },
+    {
+      "name": "8295a27b",
+      "displayName": "neighbourhood_group",
+      "queryLines": [
+        "SELECT neighbourhood_group, ROUND(AVG(price), 2) AS avg_price\n",
+        "FROM some_catalog.airbnb_gold.berlin_listing\n",
+        "GROUP BY neighbourhood_group"
+      ]
+    },
+    {
+      "name": "4f6b7590",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(DISTINCT dl.id) AS total_listings,\n",
+        "  AVG(try_cast(regexp_replace(dl.price, '[$,]', '') AS DOUBLE)) AS avg_price_per_night,\n",
+        "  AVG(1 - (bc.available = 't')::int) AS occupancy_rate,\n",
+        "  AVG(dl.review_scores_rating) AS avg_review_score,\n",
+        "  COUNT(DISTINCT dl.host_id) AS host_count\n",
+        "FROM some_catalog.airbnb_gold.berlin_detailed_listing dl\n",
+        "LEFT JOIN some_catalog.airbnb_gold.berlin_calendar bc\n",
+        "  ON dl.id = bc.listing_id\n",
+        "WHERE dl.price IS NOT NULL"
+      ]
+    },
+    {
+      "name": "95fd546f",
+      "displayName": "city_overview",
+      "queryLines": [
+        "WITH berlin_occ AS (\n",
+        "    SELECT listing_id,\n",
+        "           AVG(CASE WHEN available = 'f' THEN 1.0 ELSE 0.0 END) AS occ_rate\n",
+        "    FROM some_catalog.airbnb_gold.berlin_calendar\n",
+        "    GROUP BY listing_id\n",
+        "),\n",
+        "stock_occ AS (\n",
+        "    SELECT listing_id,\n",
+        "           AVG(CASE WHEN available = 'f' THEN 1.0 ELSE 0.0 END) AS occ_rate\n",
+        "    FROM some_catalog.airbnb_gold.stock_calendar\n",
+        "    GROUP BY listing_id\n",
+        ")\n",
+        "SELECT\n",
+        "    'Berlin' AS city,\n",
+        "    COUNT(DISTINCT l.id)               AS total_listings,\n",
+        "    AVG(try_cast(l.price AS DOUBLE))   AS avg_price_per_night,\n",
+        "    AVG(COALESCE(b.occ_rate, 0.0))     AS avg_occupancy_rate,\n",
+        "    AVG(l.reviews_per_month)           AS avg_review_score,\n",
+        "    COUNT(DISTINCT l.host_id)          AS host_count\n",
+        "FROM some_catalog.airbnb_gold.berlin_listing l\n",
+        "LEFT JOIN berlin_occ b ON l.id = b.listing_id\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "    'Stockholm' AS city,\n",
+        "    COUNT(DISTINCT l.id)               AS total_listings,\n",
+        "    AVG(try_cast(l.price AS DOUBLE))   AS avg_price_per_night,\n",
+        "    AVG(COALESCE(s.occ_rate, 0.0))     AS avg_occupancy_rate,\n",
+        "    AVG(l.reviews_per_month)           AS avg_review_score,\n",
+        "    COUNT(DISTINCT l.host_id)          AS host_count\n",
+        "FROM some_catalog.airbnb_gold.stock_listing l\n",
+        "LEFT JOIN stock_occ s ON l.id = s.listing_id"
+      ]
+    },
+    {
+      "name": "20ffe930",
+      "displayName": "some",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(DISTINCT dl.id) AS total_listings,\n",
+        "  AVG(try_cast(regexp_replace(dl.price, '[$,]', '') AS DOUBLE)) AS avg_price_per_night,\n",
+        "  AVG(1 - (bc.available = 't')::int) AS occupancy_rate,\n",
+        "  AVG(dl.review_scores_rating) AS avg_review_score,\n",
+        "  COUNT(DISTINCT dl.host_id) AS host_count\n",
+        "FROM some_catalog.airbnb_gold.berlin_detailed_listing dl\n",
+        "LEFT JOIN some_catalog.airbnb_gold.berlin_calendar bc\n",
+        "  ON dl.id = bc.listing_id\n",
+        "WHERE dl.price IS NOT NULL"
+      ]
+    },
+    {
+      "name": "871d54c4",
+      "displayName": "listing_count_price_rating_occupancy",
+      "queryLines": [
+        "SELECT\n",
+        "  'berlin' AS city,\n",
+        "  COUNT(DISTINCT berlin.id) AS listing_count,\n",
+        "  AVG(try_cast(regexp_replace(berlin.price, '[$,]', '') AS DOUBLE)) AS avg_price,\n",
+        "  AVG(berlin.review_scores_rating) AS avg_rating,\n",
+        "  AVG(1 - (berlin_calendar.available = 't')::int) AS occupancy\n",
+        "FROM some_catalog.airbnb_gold.berlin_detailed_listing berlin\n",
+        "LEFT JOIN some_catalog.airbnb_gold.berlin_calendar berlin_calendar\n",
+        "  ON berlin.id = berlin_calendar.listing_id\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "  'stock' AS city,\n",
+        "  COUNT(DISTINCT stock.id) AS listing_count,\n",
+        "  AVG(try_cast(regexp_replace(stock.price, '[$,]', '') AS DOUBLE)) AS avg_price,\n",
+        "  AVG(stock.review_scores_rating) AS avg_rating,\n",
+        "  AVG(1 - (stock_calendar.available = 't')::int) AS occupancy\n",
+        "FROM some_catalog.airbnb_gold.stock_detailed_listing stock\n",
+        "LEFT JOIN some_catalog.airbnb_gold.stock_calendar stock_calendar\n",
+        "  ON stock.id = stock_calendar.listing_id"
+      ]
+    },
+    {
+      "name": "e59fcbff",
+      "displayName": "Untitled dataset 2",
+      "queryLines": [
+        "SELECT\n",
+        "  'Berlin' AS city,\n",
+        "  dl.neighbourhood_cleansed AS neighbourhood,\n",
+        "  AVG(try_cast(regexp_replace(dl.price, '[$,]', '') AS DOUBLE)) AS avg_price,\n",
+        "  AVG(1 - (bc.available = 't')::int) AS occupancy_rate,\n",
+        "  AVG(dl.latitude) AS avg_latitude,\n",
+        "  AVG(dl.longitude) AS avg_longitude\n",
+        "FROM some_catalog.airbnb_gold.berlin_detailed_listing dl\n",
+        "LEFT JOIN some_catalog.airbnb_gold.berlin_calendar bc\n",
+        "  ON dl.id = bc.listing_id\n",
+        "GROUP BY dl.neighbourhood_cleansed\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "  'Stockholm' AS city,\n",
+        "  sl.neighbourhood_cleansed AS neighbourhood,\n",
+        "  AVG(try_cast(regexp_replace(sl.price, '[$,]', '') AS DOUBLE)) AS avg_price,\n",
+        "  AVG(1 - (sc.available = 't')::int) AS occupancy_rate,\n",
+        "  AVG(sl.latitude) AS avg_latitude,\n",
+        "  AVG(sl.longitude) AS avg_longitude\n",
+        "FROM some_catalog.airbnb_gold.stock_detailed_listing sl\n",
+        "LEFT JOIN some_catalog.airbnb_gold.stock_calendar sc\n",
+        "  ON sl.id = sc.listing_id\n",
+        "GROUP BY sl.neighbourhood_cleansed\n",
+        "\n",
+        "ORDER BY city, avg_price DESC"
+      ]
+    },
+    {
+      "name": "31ab4b4d",
+      "displayName": "Listings quality",
+      "queryLines": [
+        "WITH base AS (\r\n",
+        "    SELECT\r\n",
+        "        'Berlin' AS city,\r\n",
+        "        reviews_per_month       AS rating,\r\n",
+        "        number_of_reviews       AS n_reviews\r\n",
+        "    FROM some_catalog.airbnb_gold.berlin_listing\r\n",
+        "\r\n",
+        "    UNION ALL\r\n",
+        "\r\n",
+        "    SELECT\r\n",
+        "        'Stockholm' AS city,\r\n",
+        "        reviews_per_month       AS rating,\r\n",
+        "        number_of_reviews       AS n_reviews\r\n",
+        "    FROM some_catalog.airbnb_gold.stock_listing\r\n",
+        ")\r\n",
+        "SELECT\r\n",
+        "    city,\r\n",
+        "    CASE\r\n",
+        "        WHEN rating IS NULL THEN 'No rating'\r\n",
+        "        WHEN rating < 60 THEN '<60'\r\n",
+        "        WHEN rating < 80 THEN '60-79'\r\n",
+        "        WHEN rating < 90 THEN '80-89'\r\n",
+        "        WHEN rating < 95 THEN '90-94'\r\n",
+        "        ELSE '95-100'\r\n",
+        "    END AS rating_bucket,\r\n",
+        "    CASE\r\n",
+        "        WHEN n_reviews = 0 THEN '0'\r\n",
+        "        WHEN n_reviews BETWEEN 1 AND 10 THEN '1-10'\r\n",
+        "        WHEN n_reviews BETWEEN 11 AND 50 THEN '11-50'\r\n",
+        "        WHEN n_reviews BETWEEN 51 AND 200 THEN '51-200'\r\n",
+        "        ELSE '200+'\r\n",
+        "    END AS reviews_bucket,\r\n",
+        "    COUNT(*) AS listings_count\r\n",
+        "FROM base\r\n",
+        "GROUP BY city, rating_bucket, reviews_bucket\r\n",
+        "ORDER BY city, rating_bucket, reviews_bucket;"
+      ]
+    },
+    {
+      "name": "dda38f7a",
+      "displayName": "price_trends",
+      "queryLines": [
+        "SELECT\n",
+        "    'Berlin' AS city,\n",
+        "    date_trunc('month', c.date) AS month,\n",
+        "    AVG(try_cast(regexp_replace(l.price, '[^0-9.]', '') AS DOUBLE)) AS avg_price_per_night\n",
+        "FROM some_catalog.airbnb_gold.berlin_calendar c\n",
+        "JOIN some_catalog.airbnb_gold.berlin_listing l\n",
+        "    ON c.listing_id = l.id\n",
+        "WHERE regexp_replace(l.price, '[^0-9.]', '') <> ''\n",
+        "GROUP BY 1, 2\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "    'Stockholm' AS city,\n",
+        "    date_trunc('month', c.date) AS month,\n",
+        "    AVG(try_cast(regexp_replace(l.price, '[^0-9.]', '') AS DOUBLE)) AS avg_price_per_night\n",
+        "FROM some_catalog.airbnb_gold.stock_calendar c\n",
+        "JOIN some_catalog.airbnb_gold.stock_listing l\n",
+        "    ON c.listing_id = l.id\n",
+        "WHERE regexp_replace(l.price, '[^0-9.]', '') <> ''\n",
+        "GROUP BY 1, 2\n",
+        "\n",
+        "ORDER BY month, city;"
+      ]
+    },
+    {
+      "name": "0fa09d61",
+      "displayName": "availability_by_month_neighbourhood",
+      "queryLines": [
+        "SELECT\n",
+        "    'Berlin' AS city,\n",
+        "    date_trunc('month', c.date) AS month,\n",
+        "    l.neighbourhood            AS neighbourhood,\n",
+        "    AVG(CASE WHEN c.available = 'f' THEN 1.0 ELSE 0.0 END) AS occupancy_rate\n",
+        "FROM some_catalog.airbnb_gold.berlin_calendar c\n",
+        "JOIN some_catalog.airbnb_gold.berlin_listing l\n",
+        "    ON c.listing_id = l.id\n",
+        "GROUP BY 1, 2, 3\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "    'Stockholm' AS city,\n",
+        "    date_trunc('month', c.date) AS month,\n",
+        "    l.neighbourhood            AS neighbourhood,\n",
+        "    AVG(CASE WHEN c.available = 'f' THEN 1.0 ELSE 0.0 END) AS occupancy_rate\n",
+        "FROM some_catalog.airbnb_gold.stock_calendar c\n",
+        "JOIN some_catalog.airbnb_gold.stock_listing l\n",
+        "    ON c.listing_id = l.id\n",
+        "GROUP BY 1, 2, 3\n",
+        "\n",
+        "ORDER BY month, city, neighbourhood;\n"
+      ]
+    },
+    {
+      "name": "b590207d",
+      "displayName": "listing_map",
+      "queryLines": [
+        "WITH berlin_occ AS (\n",
+        "    SELECT\n",
+        "        listing_id,\n",
+        "        AVG(CASE WHEN available = 'f' THEN 1.0 ELSE 0.0 END) AS occ_rate\n",
+        "    FROM some_catalog.airbnb_gold.berlin_calendar\n",
+        "    GROUP BY listing_id\n",
+        "),\n",
+        "stock_occ AS (\n",
+        "    SELECT\n",
+        "        listing_id,\n",
+        "        AVG(CASE WHEN available = 'f' THEN 1.0 ELSE 0.0 END) AS occ_rate\n",
+        "    FROM some_catalog.airbnb_gold.stock_calendar\n",
+        "    GROUP BY listing_id\n",
+        ")\n",
+        "SELECT\n",
+        "    'Berlin' AS city,\n",
+        "    l.id              AS listing_id,\n",
+        "    l.neighbourhood   AS neighbourhood,\n",
+        "    l.latitude,\n",
+        "    l.longitude,\n",
+        "    l.price           AS price_per_night,\n",
+        "    b.occ_rate        AS occupancy_rate\n",
+        "FROM some_catalog.airbnb_gold.berlin_listing l\n",
+        "LEFT JOIN berlin_occ b ON l.id = b.listing_id\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "    'Stockholm' AS city,\n",
+        "    l.id              AS listing_id,\n",
+        "    l.neighbourhood   AS neighbourhood,\n",
+        "    l.latitude,\n",
+        "    l.longitude,\n",
+        "    l.price           AS price_per_night,\n",
+        "    s.occ_rate        AS occupancy_rate\n",
+        "FROM some_catalog.airbnb_gold.stock_listing l\n",
+        "LEFT JOIN stock_occ s ON l.id = s.listing_id;\n"
+      ]
+    },
+    {
+      "name": "e9a39e59",
+      "displayName": "room_type_distribution",
+      "queryLines": [
+        "SELECT\n",
+        "    'Berlin' AS city,\n",
+        "    l.room_type,\n",
+        "    COUNT(*) AS listing_count\n",
+        "FROM some_catalog.airbnb_gold.berlin_listing l\n",
+        "GROUP BY 1, 2\n",
+        "\n",
+        "UNION ALL\n",
+        "\n",
+        "SELECT\n",
+        "    'Stockholm' AS city,\n",
+        "    l.room_type,\n",
+        "    COUNT(*) AS listing_count\n",
+        "FROM some_catalog.airbnb_gold.stock_listing l\n",
+        "GROUP BY 1, 2;\n"
+      ]
+    },
+    {
+      "name": "b605d8e1",
+      "displayName": "Untitled dataset 3",
+      "queryLines": [
+        "CREATE TABLE city_weather_quality AS\n",
+        "SELECT\n",
+        "    city_name,\n",
+        "    country_code,\n",
+        "    COUNT(*) AS num_observations,\n",
+        "    AVG(temperature) AS avg_temperature\n",
+        "FROM\n",
+        "    samples.accuweather.forecast_hourly_metric\n",
+        "GROUP BY\n",
+        "    city_name,\n",
+        "    country_code\n",
+        "ORDER BY\n",
+        "    num_observations DESC,\n",
+        "    avg_temperature DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "466a31e3",
+      "displayName": "first",
+      "layout": [
+        {
+          "widget": {
+            "name": "af528c4d",
+            "multilineTextboxSpec": {
+              "lines": [
+                ""
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "c2f5e14f",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "95fd546f",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "total_listings",
+                      "expression": "`total_listings`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "total_listings",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "06646ba3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "95fd546f",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "sum(avg_price_per_night)",
+                      "expression": "SUM(`avg_price_per_night`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(avg_price_per_night)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 1,
+            "y": 2,
+            "width": 1,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "818c67ea",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "95fd546f",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "sum(avg_occupancy_rate)",
+                      "expression": "SUM(`avg_occupancy_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(avg_occupancy_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 1,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "1c4bdb35",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "95fd546f",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "sum(avg_review_score)",
+                      "expression": "SUM(`avg_review_score`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(avg_review_score)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 1,
+            "y": 7,
+            "width": 2,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "fc66f6d2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "95fd546f",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "sum(host_count)",
+                      "expression": "SUM(`host_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(host_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "95386488",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dda38f7a",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "monthly(month)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `month`)"
+                    },
+                    {
+                      "name": "sum(avg_price_per_night)",
+                      "expression": "SUM(`avg_price_per_night`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "area",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(month)",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(avg_price_per_night)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "9311c9ac",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "0fa09d61",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "monthly(month)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `month`)"
+                    },
+                    {
+                      "name": "sum(occupancy_rate)",
+                      "expression": "SUM(`occupancy_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "area",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(month)",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(occupancy_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 7,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "a4a997e2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "0fa09d61",
+                  "fields": [
+                    {
+                      "name": "sum(occupancy_rate)",
+                      "expression": "SUM(`occupancy_rate`)"
+                    },
+                    {
+                      "name": "monthly(month)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `month`)"
+                    },
+                    {
+                      "name": "neighbourhood",
+                      "expression": "`neighbourhood`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`city` IN ('Stockholm')"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(month)",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "neighbourhood",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "sum(occupancy_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 14,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "9d08123c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b590207d",
+                  "fields": [
+                    {
+                      "name": "occupancy_rate",
+                      "expression": "`occupancy_rate`"
+                    },
+                    {
+                      "name": "latitude",
+                      "expression": "`latitude`"
+                    },
+                    {
+                      "name": "longitude",
+                      "expression": "`longitude`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "occupancy_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "91ae172d",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b590207d",
+                  "fields": [
+                    {
+                      "name": "price_per_night",
+                      "expression": "`price_per_night`"
+                    },
+                    {
+                      "name": "latitude",
+                      "expression": "`latitude`"
+                    },
+                    {
+                      "name": "longitude",
+                      "expression": "`longitude`"
+                    },
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "neighbourhood",
+                      "expression": "`neighbourhood`"
+                    },
+                    {
+                      "name": "occupancy_rate",
+                      "expression": "`occupancy_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "price_per_night",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "extra": [
+                  {
+                    "fieldName": "city"
+                  },
+                  {
+                    "fieldName": "neighbourhood"
+                  },
+                  {
+                    "fieldName": "price_per_night"
+                  },
+                  {
+                    "fieldName": "occupancy_rate"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 22,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "43ef5a33",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e9a39e59",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "room_type",
+                      "expression": "`room_type`"
+                    },
+                    {
+                      "name": "sum(listing_count)",
+                      "expression": "SUM(`listing_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "room_type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(listing_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 28,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "7f1c09fd",
+      "displayName": "second",
+      "layout": [
+        {
+          "widget": {
+            "name": "89fd17ab",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4b4c8eed",
+                  "fields": [
+                    {
+                      "name": "price",
+                      "expression": "`price`"
+                    },
+                    {
+                      "name": "latitude",
+                      "expression": "`latitude`"
+                    },
+                    {
+                      "name": "longitude",
+                      "expression": "`longitude`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "price",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "legend": {
+                    "hideTitle": false
+                  }
+                }
+              },
+              "frame": {
+                "title": "Average Price per Neighbourhood Group",
+                "showTitle": true,
+                "showDescription": true
+              },
+              "mark": {
+                "opacity": 0.06
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "ccdb992b",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "871d54c4",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "avg(occupancy)",
+                      "expression": "AVG(`occupancy`)"
+                    },
+                    {
+                      "name": "avg(avg_rating)",
+                      "expression": "AVG(`avg_rating`)"
+                    },
+                    {
+                      "name": "avg(avg_price)",
+                      "expression": "AVG(`avg_price`)"
+                    },
+                    {
+                      "name": "sum(listing_count)",
+                      "expression": "SUM(`listing_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative",
+                    "fn": {
+                      "type": "symlog"
+                    }
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "avg(occupancy)"
+                    },
+                    {
+                      "fieldName": "avg(avg_rating)",
+                      "displayName": "Average rating"
+                    },
+                    {
+                      "fieldName": "avg(avg_price)",
+                      "displayName": "Average price"
+                    },
+                    {
+                      "fieldName": "sum(listing_count)",
+                      "displayName": "Listing count"
+                    }
+                  ]
+                }
+              },
+              "frame": {
+                "title": "Side-by-side metrics: average price, occupancy, listing counts, and ratings",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "e54fb71c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e59fcbff",
+                  "fields": [
+                    {
+                      "name": "avg_price",
+                      "expression": "`avg_price`"
+                    },
+                    {
+                      "name": "avg_latitude",
+                      "expression": "`avg_latitude`"
+                    },
+                    {
+                      "name": "avg_longitude",
+                      "expression": "`avg_longitude`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`city` IN ('Berlin')"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "avg_latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "avg_longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "avg_price",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 3,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "5de4613e",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e59fcbff",
+                  "fields": [
+                    {
+                      "name": "avg_price",
+                      "expression": "`avg_price`"
+                    },
+                    {
+                      "name": "avg_latitude",
+                      "expression": "`avg_latitude`"
+                    },
+                    {
+                      "name": "avg_longitude",
+                      "expression": "`avg_longitude`"
+                    }
+                  ],
+                  "filters": [
+                    {
+                      "expression": "`city` IN ('Stockholm')"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "symbol-map",
+              "encodings": {
+                "coordinates": {
+                  "latitude": {
+                    "fieldName": "avg_latitude"
+                  },
+                  "longitude": {
+                    "fieldName": "avg_longitude"
+                  }
+                },
+                "color": {
+                  "fieldName": "avg_price",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "scheme",
+                      "scheme": "blues"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 19,
+            "width": 3,
+            "height": 9
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "543b6cc5",
+      "displayName": "Global Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS"
+    },
+    {
+      "name": "0fb5fcef",
+      "displayName": "third",
+      "layout": [
+        {
+          "widget": {
+            "name": "55f1779a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "31ab4b4d",
+                  "fields": [
+                    {
+                      "name": "sum(listings_count)",
+                      "expression": "SUM(`listings_count`)"
+                    },
+                    {
+                      "name": "reviews_bucket",
+                      "expression": "`reviews_bucket`"
+                    },
+                    {
+                      "name": "rating_bucket",
+                      "expression": "`rating_bucket`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "heatmap",
+              "encodings": {
+                "x": {
+                  "fieldName": "reviews_bucket",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "rating_bucket",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "sum(listings_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 1,
+            "y": 0,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "genieSpace": {
+      "isEnabled": true,
+      "overrideId": "01f0b8368f4b16548cf1f4d6d93c43cf"
+    },
+    "applyModeEnabled": false
+  }
+}
